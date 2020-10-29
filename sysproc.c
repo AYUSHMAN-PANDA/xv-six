@@ -89,3 +89,20 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+//adding function call for waitx()
+int 
+sys_waitx(void)
+{
+  int *wtime,*rtime;
+
+  //argptr fetches the system call argument,defined in syscall.c
+  
+  if (argptr(0, (char **)&wtime, sizeof(int)) < 0) 
+    return -1;
+
+  if (argptr(1, (char **)&rtime, sizeof(int)) < 0)
+    return -1;
+  
+  return waitx(wtime,rtime);
+}

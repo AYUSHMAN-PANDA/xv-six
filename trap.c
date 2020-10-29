@@ -53,6 +53,12 @@ trap(struct trapframe *tf)
       ticks++;
       wakeup(&ticks);
       release(&tickslock);
+
+      //update running time - (rtime) for waitx :
+      if (myproc()){
+				if (myproc()->state == RUNNING)
+				  myproc()->rtime += 1;
+			}
     }
     lapiceoi();
     break;

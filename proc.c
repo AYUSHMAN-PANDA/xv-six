@@ -6,7 +6,6 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -111,6 +110,13 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
+
+  //further updated the variables for waitx():
+  //update ctime(process creation time) with current CPU ticks.
+  //initialise rtime(process running time) and etime(process end time) to 0
+  p->ctime=ticks;
+  p->rtime=0;
+  p->etime=0;
 
   return p;
 }
@@ -263,6 +269,11 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+
+  //update etime for waitx
+  //update etime (process end time) to current CPU ticks for the process ,since its exiting:
+  curproc->etime=ticks;
+  cprintf("Total time taken by the process : %d\n",curproc->etime-curproc->ctime);
   sched();
   panic("zombie exit");
 }
@@ -295,6 +306,55 @@ wait(void)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    if(!havekids || curproc->killed){
+      release(&ptable.lock);
+      return -1;
+    }
+
+    // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+    sleep(curproc, &ptable.lock);  //DOC: wait-sleep
+  }
+}
+
+
+//waitx function :: 
+int
+waitx(int *wtime, int *rtime)
+{
+  struct proc *p;
+  int havekids, pid;
+  struct proc *curproc = myproc();
+  
+  acquire(&ptable.lock);
+  for(;;){
+    // Scan through table looking for exited children.
+    havekids = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->parent != curproc)
+        continue;
+      havekids = 1;
+      if(p->state == ZOMBIE){
+        // Found one.
+        pid = p->pid;
+        kfree(p->kstack);
+        p->kstack = 0;
+        freevm(p->pgdir);
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+        
+        //Allocate values to rtime and wtime when waitx is called and child is found in ZOMBIE state
+        *wtime = p->etime - p->ctime - p->rtime;
+        *rtime = p->rtime;
+				
         release(&ptable.lock);
         return pid;
       }
