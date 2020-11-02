@@ -19,8 +19,22 @@ main(void)
   dup(0);  // stdout
   dup(0);  // stderr
 
+  #ifdef RR
+    printf(1, "SCHEDULER : DEFAULT (RR) \n");
+  #endif
+  #ifdef FCFS
+    printf(1, "SCHEDULER : FCFS\n");
+  #endif
+  #ifdef PBS
+    printf(1, "SCHEDULER : PBS\n");
+  #endif
+  #ifdef MLFQ
+    printf(1, "SCHEDULER : MLFQ\n");
+  #endif
+
+
   for(;;){
-    printf(1, "init: starting sh\n");
+    printf(1, "init: starting MODIFIED xv-Six sh\n");
     pid = fork();
     if(pid < 0){
       printf(1, "init: fork failed\n");

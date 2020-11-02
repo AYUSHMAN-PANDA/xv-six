@@ -9,6 +9,9 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct proc_stat;
+int q_ticks_max[5];
+
 
 // bio.c
 void            binit(void);
@@ -121,6 +124,11 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             waitx(int*,int*);
+int             ps(void);
+int             set_priority(int,int);
+void            change_q_flag(struct proc* p);
+void            incr_curr_ticks(struct proc *p);
+// int             getpinfo(struct proc_stat *, int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

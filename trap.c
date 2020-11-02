@@ -57,7 +57,16 @@ trap(struct trapframe *tf)
       //update running time - (rtime) for waitx :
       if (myproc()){
 				if (myproc()->state == RUNNING)
-				  myproc()->rtime += 1;
+				{ 
+          myproc()->rtime += 1;
+          myproc()->ps_wtime=0;
+        }
+        else if (myproc()->state == SLEEPING)
+				{ 
+          myproc()->stime += 1;
+        }
+        if (myproc()->state != UNUSED && myproc()->state!=SLEEPING)
+				  myproc()->ps_wtime += 1;
 			}
     }
     lapiceoi();
@@ -110,7 +119,21 @@ trap(struct trapframe *tf)
   // If interrupts were on while locks held, would need to check nlock.
   if(myproc() && myproc()->state == RUNNING &&
      tf->trapno == T_IRQ0+IRQ_TIMER)
-    yield();
+    {
+      #ifdef MLFQ
+        if(myproc()->curr_ticks >= q_ticks_max[myproc()->queue])
+        {
+          change_q_flag(myproc());
+          yield();
+        }
+        else 		
+          incr_curr_ticks(myproc());
+		  #endif
+
+      #ifndef FCFS
+        yield();
+      #endif
+    }
 
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)

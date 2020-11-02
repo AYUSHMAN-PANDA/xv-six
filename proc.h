@@ -53,7 +53,16 @@ struct proc {
   int ctime;                   //Process Creation Time
   int etime;                   //Process End Time
   int rtime;                   //Process Running Time
-  //int ttime;   /                //Process Total Time(RUNNING + SLEEPING)
+  int stime;
+  int ps_wtime;
+  int priority;
+  int n_run;
+  //for mlfq:
+  int ticks[5];
+  int queue;
+  int curr_ticks;
+  int change_q;
+  int enter;
 };
 
 // Process memory is laid out contiguously, low addresses first:
